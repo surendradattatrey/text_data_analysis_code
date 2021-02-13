@@ -1,0 +1,70 @@
+---
+title: "TABA_Assignment 2"
+author: "Surendra Kumar Dattatrey"
+date: "13 May 2017"
+output: html_document
+---
+
+## R Markdown
+
+This markdown document is for assignment 2 of TABA. Where i performed analysis on Bank of America, with some good reason as previously i have worked in this organization and i like the work culture of this organization.
+
+```{r cars}
+rm(list=ls())
+library(rvest)
+library(NLP)
+library(openNLP)
+library(rworldmap)
+library(stringr)
+library(ggplot2)
+library(ggmap)
+
+page = read_html('https://en.wikipedia.org/wiki/Bank_of_America')
+
+text = html_text(html_nodes(page,'p'))
+text = text[text != ""]
+text = gsub("\\[[0-9]]|\\[[0-9][0-9]]|\\[[0-9][0-9][0-9]]","",text) # removing refrences [101] type
+
+```
+## Number and Currency Data extraction 
+
+```{r}
+extract_dollar_amount <- str_extract_all(text,"\\$[0-9].[0-9]*\\b ")
+extract_dollar_amount
+
+extract_all_numbers <- str_extract_all(text,"\\(?[0-9].[0-9]+\\)? | \\(?[0-9][0-9],[0-9]+\\)?")[[1]]
+extract_all_numbers
+
+# Make one complete document
+text = paste(text,collapse = " ") 
+text = as.String(text)
+sent_annot = Maxent_Sent_Token_Annotator()
+word_annot = Maxent_Word_Token_Annotator()
+loc_annot = Maxent_Entity_Annotator(kind = "location")
+
+annot.l1 = NLP::annotate(text, list(sent_annot,word_annot,loc_annot))
+
+k <- sapply(annot.l1$features, `[[`, "kind")
+boa_locations = text[annot.l1[k == "location"]]
+
+all_places = unique(boa_locations) # view contents of this obj
+
+all_places_geocoded <- geocode(all_places) 
+#all_places_geocoded 
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+
+newmap <- getMap(resolution = "low")
+plot(newmap)
+#plot(newmap, asp = 1)
+
+points(all_places_geocoded$lon, all_places_geocoded$lat, col = "blue", cex = 1.2, pch = 19)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.

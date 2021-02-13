@@ -1,0 +1,101 @@
+---
+title: "TABA Assignment 1 - Tweets Analysis "
+author: "Surendra Kumar Dattatrey"
+date: "01 May 2017"
+output: html_document
+---
+
+
+## TABA Assignment 1 - Tweets Analysis
+
+This is an R Markdown document for Tweets analysis for IBMResearch and IBMWatson. Given the corpus of 3000+ Tweets, We extracted Top 5 Tweets, Top 5 Users, Top 5 Unigrams (Words) and Top 5 Bigrams
+
+Below is the function for cleaning the corpus and exarcting the information using Funcion
+
+```{r cars}
+rm(list=ls())
+#install.packages("gsubfn")
+options(scipen=999)
+library(gsubfn)
+library(text2vec)
+
+#data = read.csv('C:\\Users\\Yash\\Desktop\\ISB Documents\\Term 1\\TABA\\Assignment 1\\IBMResearch_tweets.csv',stringsAsFactors = F)
+
+func_return = function(x) 
+{
+text = data$text
+text = tolower(text)
+
+##Finding top 5 Hashtags and Twitter Handles
+hash_tags_users = unlist(strapplyc(text,"@\\w+|#\\w+"))
+tabl = table(hash_tags_users)
+tabl = tabl[order(tabl, decreasing = T)]
+
+top_hashtag = tabl[grep("#",names(tabl))[1:5]]
+
+top_users = tabl[grep("@",names(tabl))[1:5]]
+
+
+#Clean Function to data cleansing
+
+tweet.clean = function(x)                   
+{ require("tm")
+  x = gsub('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',' ',x)
+  x = gsub('\\\\x.*? |\\\\x.*?\'$|\\\\x.*?\"$'," ",x)
+  x = gsub('#\\w+',' ',x)
+  x = gsub('@\\w+',' ',x)
+  x = gsub('^b',' ',x)
+  x  =  gsub("[^[:alnum:]]", " ", x)        # keep only alpha numeric
+  x = gsub('^\\s+rt',' ',x)
+  x  =  tolower(x)                          # convert to lower case characters
+  x  =  removeNumbers(x)                    # removing numbers
+  x  =  stripWhitespace(x)                  # removing white space
+  x  =  gsub("^\\s+|\\s+$", "", x)          # remove leading and trailing white space
+  return(x)
+}
+
+text1 = tweet.clean(text)
+
+###-------------------###  
+tok_fun = word_tokenizer  # using word & not space tokenizers
+
+it_0 = itoken( text1, tokenizer = tok_fun, ids = 1:length(text1), progressbar = T)
+
+#Finding Bigrams
+
+vocab = create_vocabulary(it_0, ngram = c(2L, 2L), stopwords = readLines('https://raw.githubusercontent.com/sudhir-voleti/basic-text-analysis-shinyapp/master/data/stopwords.txt'))
+top_bigram = vocab$vocab[order(vocab$vocab$terms_counts, decreasing = T),]
+top_bigram = top_bigram$terms[1:5]
+
+#Finding Unigrams / Words
+vocab = create_vocabulary(it_0, ngram = c(1L, 1L), stopwords = readLines('https://raw.githubusercontent.com/sudhir-voleti/basic-text-analysis-shinyapp/master/data/stopwords.txt'))
+top_unigram = vocab$vocab[order(vocab$vocab$terms_counts, decreasing = T),]
+top_unigram = top_unigram$terms[1:5]
+
+# Creating Dataframe 
+df = c(top_hashtag,top_users,top_unigram,top_bigram)
+df
+return (df)
+}
+```
+
+Here we are extracting data data are returing a DF
+
+```{r pressure, echo=FALSE}
+
+data = read.csv('C:\\Users\\Yash\\Desktop\\ISB Documents\\Term 1\\TABA\\Assignment 1\\IBMResearch_tweets.csv',stringsAsFactors = F)
+
+retrun_df = func_return (df)
+retrun_df
+
+data = read.csv('C:\\Users\\Yash\\Desktop\\ISB Documents\\Term 1\\TABA\\Assignment 1\\IBMwatson_tweets.csv',stringsAsFactors = F)
+
+retrun_df = func_return (df)
+retrun_df
+```
+
+After looking on 2  IBM corpus, I can say that most of the Tweets like - #ibmresearch, #ai and #ibmwatson are similar as IBM watson which another area is also false under these areas AI is being used in IBMWatson and IBMWatson is part of IBMResearch. Hence interrelated.
+
+On Unigrams, as they are also almost similar like - "watson", "amp", "cognitive" and "ibm" and should be like this as bith corpus are interrelated.
+
+On Bigrams, As Bigrams are specific to respective corpus, hence not matching much only "ibm_watson" and "cognitive_computing" are similar beacuse "ibm_watson" is research product of IBM and "cognitive_computing" technology is being used in IBM for more towards research.

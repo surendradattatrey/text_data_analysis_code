@@ -1,0 +1,80 @@
+---
+title: "TABA_Assignment 2"
+author: "Surendra Kumar Dattatrey"
+date: "13 May 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(error = TRUE)
+```
+
+## R Markdown
+This markdown document is for assignment 2 of TABA. Where i performed analysis on wiki page of Bank of America. Reason of choosing this fortune 500 company, is that i have already worked this organization and i like this orgazation due it's work culture. During my tenure with this organization, i worked a lot and enjoyed a lot.
+
+```{r cars}
+rm(list=ls())
+library(rvest)
+library(NLP)
+library(openNLP)
+library(rworldmap)
+library(stringr)
+library(ggplot2)
+library(ggmap)
+
+page = read_html('https://en.wikipedia.org/wiki/Bank_of_America')
+
+text = html_text(html_nodes(page,'p'))
+text = text[text != ""]
+text = gsub("\\[[0-9]]|\\[[0-9][0-9]]|\\[[0-9][0-9][0-9]]","",text) # removing refrences [101] type
+
+
+
+# Make one complete document
+text = paste(text,collapse = " ") 
+text = as.String(text)
+sent_annot = Maxent_Sent_Token_Annotator()
+word_annot = Maxent_Word_Token_Annotator()
+loc_annot = Maxent_Entity_Annotator(kind = "location")
+
+annot.l1 = NLP::annotate(text, list(sent_annot,word_annot,loc_annot))
+
+k <- sapply(annot.l1$features, `[[`, "kind")
+boa_locations = text[annot.l1[k == "location"]]
+
+all_places = unique(boa_locations) # view contents of this obj
+
+all_places_geocoded <- geocode(all_places) 
+#all_places_geocoded 
+
+```
+
+## Number and Currency Data extraction 
+I try to exracted and segregated data in two ways,
+1) Currency data 
+2) Number data. 
+During my extraction, i found that currency data is in USD.
+
+```{r}
+extract_dollar_amount <- str_extract_all(text,"\\$[0-9].[0-9]*\\b ")
+extract_dollar_amount
+
+extract_all_numbers <- str_extract_all(text,"\\(?[0-9].[0-9]+\\)? | \\(?[0-9][0-9],[0-9]+\\)?")[[1]]
+extract_all_numbers
+
+
+```
+
+## Plotting location of BOA
+
+Locations are plotted for BOA which I extracted in previous step.
+
+```{r pressure, echo=FALSE}
+newmap <- getMap(resolution = "low")
+plot(newmap)
+
+points(all_places_geocoded$lon, all_places_geocoded$lat, col = "blue", cex = 1.2, pch = 19)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
